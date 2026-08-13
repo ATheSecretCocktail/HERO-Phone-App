@@ -238,11 +238,32 @@
         }
       });
 
-      window.addEventListener('message', function(e) {
+     window.addEventListener('message', function(e) {
         const data = e.data;
-        if (data && data.type === 'rc-call-ring-notify' || data.type === 'rc-web-phone-call-start') {
-          let callerNumber = data.call.from.phoneNumber || data.call.to.phoneNumber;
-          document.getElementById('phone').value = callerNumber;
+        if (!data || !data.type) return;
+
+        // Catch inbound ringing, outbound dialing, and connected calls
+        if (data.type === 'rc-call-ring-notify' || 
+            data.type === 'rc-active-call-notify' || 
+            data.type === 'rc-web-phone-call-start') {
+          
+          if (data.call) {
+            let customerNumber = "";
+            
+            // If the rep is calling out, the customer is the "To" number
+            if (data.call.direction === 'Outbound') {
+               customerNumber = data.call.to.phoneNumber || data.call.to; 
+            } 
+            // If the customer is calling in, the customer is the "From" number
+            else if (data.call.direction === 'Inbound') {
+               customerNumber = data.call.from.phoneNumber || data.call.from;
+            }
+
+            // Clean up the number and pop it into the field
+            if (customerNumber) {
+              document.getElementById('phone').value = customerNumber;
+            }
+          }
         }
       });
 
