@@ -44,7 +44,7 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center; /* Centers the card vertically so no scrolling is needed */
+        justify-content: center;
         padding: 20px;
         overflow-y: hidden;
       }
@@ -59,10 +59,9 @@
         width: 100%;
         max-width: 450px;
         border-top: 5px solid var(--accent-teal);
-        overflow: hidden; /* Keeps the background image inside the rounded corners */
+        overflow: hidden; 
       }
 
-      /* The Watermark Layer */
       #form-card::before {
         content: "";
         position: absolute;
@@ -70,15 +69,14 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background-image: url('logo.png'); /* Points to your repo logo */
+        background-image: url('logo.png'); 
         background-repeat: no-repeat;
         background-position: center;
-        background-size: 70%; /* Adjust this percentage to make the logo larger or smaller */
-        opacity: 0.08; /* 8% opacity so it doesn't distract from the text */
+        background-size: 70%; 
+        opacity: 0.08; 
         z-index: 0;
       }
 
-      /* Ensures form fields sit on top of the watermark */
       #form-card > * {
         position: relative;
         z-index: 1;
@@ -120,7 +118,7 @@
         box-sizing: border-box;
         font-size: 14px;
         font-family: inherit;
-        background: rgba(255, 255, 255, 0.9); /* Slight white tint to inputs to stand out over logo */
+        background: rgba(255, 255, 255, 0.9); 
         transition: border-color 0.2s;
       }
 
@@ -130,7 +128,6 @@
         box-shadow: 0 0 0 3px rgba(0, 164, 180, 0.1);
       }
 
-      /* --- Action Button --- */
       button { 
         width: 100%;
         margin-top: 10px;
@@ -165,8 +162,9 @@
 
     <!-- 1. The RingCentral Embeddable Widget -->
     <div id="phone-container">
-      <iframe id="rc-widget" allow="microphone" 
-        src="https://ringcentral.github.io/ringcentral-embeddable/app.html?clientId=3WhRIqL8oGjeZ4YD3dGkCM&appServer=https://platform.ringcentral.com">
+      <!-- Make sure your clientId is still inside this URL! -->
+    <iframe id="rc-widget" allow="microphone" 
+        src="https://apps.ringcentral.com/integration/ringcentral-embeddable/latest/app.html?clientId=3WhRIqL8oGjeZ4YD3dGkCM&appServer=https://platform.ringcentral.com&redirectUri=https://apps.ringcentral.com/integration/ringcentral-embeddable/latest/redirect.html">
 </iframe>
     </div>
 
@@ -189,8 +187,21 @@
           <input type="email" id="email" placeholder="lead@example.com">
         </div>
 
+        <!-- NEW: Program Interest Dropdown -->
         <div class="input-group">
-          <label>📋 Call Disposition:</label>
+          <label>🎓 Program Interest:</label>
+          <select id="program">
+            <option disabled selected>Select a program...</option>
+            <option>Phlebotomy</option>
+            <option>Medical Assisting</option>
+            <option>Patient Care Tech</option>
+            <option>CNA</option>
+            <option>Not Applicable</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label>📋 Call Outcome:</label>
           <select id="disposition">
             <option disabled selected>Select an outcome...</option>
             <option>Left Voicemail</option>
@@ -203,7 +214,7 @@
 
         <div class="input-group">
           <label>📝 Call Notes (Optional):</label>
-          <textarea id="notes" rows="3" placeholder="Lead asked about Phlebotomy evening classes..."></textarea>
+          <textarea id="notes" rows="3" placeholder="Lead asked about evening classes..."></textarea>
         </div>
 
         <button onclick="submitLog()" id="submitBtn">Log to ActiveCampaign</button>
@@ -227,9 +238,11 @@
         const btn = document.getElementById('submitBtn');
         const status = document.getElementById('statusMessage');
         const phone = document.getElementById('phone').value;
-        const email = document.getElementById('email').value; // Grab the email
+        const email = document.getElementById('email').value;
+        const program = document.getElementById('program').value; // Grab the program
         const disp = document.getElementById('disposition').value;
         
+        // Added validation so they must select an outcome and a phone number
         if(!phone || disp === "Select an outcome...") {
             status.innerText = "⚠️ Please ensure a phone number and disposition are selected.";
             status.style.color = "#d93025";
@@ -242,7 +255,8 @@
         
         const formData = {
           phone: phone,
-          email: email, // Add email to the payload
+          email: email,
+          program: program === "Select a program..." ? "" : program, // Handle default state
           disposition: disp,
           notes: document.getElementById('notes').value
         };
@@ -260,6 +274,7 @@
           document.getElementById('notes').value = ""; 
           document.getElementById('email').value = ""; 
           document.getElementById('disposition').selectedIndex = 0;
+          document.getElementById('program').selectedIndex = 0; // Reset program dropdown
           btn.innerText = "Log to ActiveCampaign";
           btn.style.opacity = "1";
           
