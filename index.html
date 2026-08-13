@@ -46,7 +46,8 @@
         align-items: center;
         justify-content: center;
         padding: 20px;
-        overflow-y: hidden;
+        max-height: 90vh;
+        overflow-y: auto;
       }
 
       /* --- The Form Card with Watermark --- */
@@ -228,7 +229,7 @@
     <!-- 3. The Javascript -->
    <!-- 3. The Javascript -->
     <script>
-      const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzBLnUCxcc26yaXUUmnim_pRP188z_emihi5XVcP0nxmek3zXWb6doZMl86OcdfzriQuA/exec";
+      const GAS_WEB_APP_URL = "https://script.google.com/macros/library/d/1lyspkxDm1KX9jEFaDQcUXI2LQP7kwPFutwFwverBSyLl229VDT72m6ty/8";
 
       // NEW: When the page loads, check if they have a saved PIN!
       document.addEventListener("DOMContentLoaded", function() {
@@ -309,7 +310,7 @@
           btn.innerText = "Log to ActiveCampaign";
           btn.style.opacity = "1";
           
-          setTimeout(() => { status.innerText = ""; }, 4000);
+          // setTimeout(() => { status.innerText = ""; }, 4000);
         })
         .catch(error => {
           status.innerText = "❌ Error: Could not connect to script.";
