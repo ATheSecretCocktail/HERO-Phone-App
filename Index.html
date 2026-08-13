@@ -1,0 +1,91 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { display: flex; font-family: Arial, sans-serif; }
+      #phone-container { width: 300px; height: 500px; }
+      #form-container { padding: 20px; flex-grow: 1; }
+      .input-group { margin-bottom: 15px; }
+      input, select, textarea { width: 100%; padding: 8px; }
+      button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+
+    <!-- 1. The RingCentral Embeddable Widget -->
+    <div id="phone-container">
+      <iframe width="300" height="500" id="rc-widget" allow="microphone" 
+              src="https://ringcentral.github.io/ringcentral-embeddable/app.html">
+      </iframe>
+    </div>
+
+    <!-- 2. The Quick Log Form -->
+    <div id="form-container">
+      <h2>Quick Call Logger</h2>
+      
+      <div class="input-group">
+        <label>Phone Number (Auto-Fills):</label>
+        <input type="text" id="phone" placeholder="(555) 555-5555">
+      </div>
+
+      <div class="input-group">
+        <label>Call Disposition:</label>
+        <select id="disposition">
+          <option>Left Voicemail</option>
+          <option>Spoke to Lead</option>
+          <option>No Answer</option>
+          <option>Bad Number</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label>Notes:</label>
+        <textarea id="notes" rows="4"></textarea>
+      </div>
+
+      <button onclick="submitLog()">Log to ActiveCampaign</button>
+      <div id="statusMessage"></div>
+    </div>
+
+    <!-- 3. The Javascript Magic -->
+    <script>
+  // Replace this with your Google Apps Script Web App URL!
+  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx_wVOKvOue3KcdlX9PPioW1pILokCv_hZEnXqn-Zox/dev";
+
+  // Listen for the incoming call to auto-fill the phone number
+  window.addEventListener('message', function(e) {
+    const data = e.data;
+    if (data && data.type === 'rc-call-ring-notify' || data.type === 'rc-web-phone-call-start') {
+      let callerNumber = data.call.from.phoneNumber || data.call.to.phoneNumber;
+      document.getElementById('phone').value = callerNumber;
+    }
+  });
+
+  // Send the data to your Google Apps Script backend
+  function submitLog() {
+    document.getElementById('statusMessage').innerText = "Logging to AC...";
+    
+    const formData = {
+      phone: document.getElementById('phone').value,
+      disposition: document.getElementById('disposition').value,
+      notes: document.getElementById('notes').value
+    };
+
+    // Use fetch() to send a POST request to your GAS Web App
+    fetch(GAS_WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify(formData)
+    })
+    .then(response => response.text())
+    .then(result => {
+      document.getElementById('statusMessage').innerText = result;
+      document.getElementById('notes').value = ""; // Clear notes
+    })
+    .catch(error => {
+      document.getElementById('statusMessage').innerText = "Error: " + error;
+    });
+  }
+</script>
+  </body>
+</html>
