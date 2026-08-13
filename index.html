@@ -330,7 +330,7 @@
           btn.innerText = "Log to ActiveCampaign";
           btn.style.opacity = "1";
           
-          // setTimeout(() => { status.innerText = ""; }, 4000);
+          setTimeout(() => { status.innerText = ""; }, 4000);
         })
         .catch(error => {
           status.innerText = "❌ Error: Could not connect to script.";
