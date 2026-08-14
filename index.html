@@ -231,6 +231,11 @@
         </div>
         <button onclick="submitLog()" id="submitBtn">Log to ActiveCampaign</button>
         <div id="statusMessage"></div>
+        <div style="margin-top: 15px; text-align: center;">
+  <a id="acViewLink" href="#" target="_blank" style="display: none; color: #3182ce; font-weight: bold; text-decoration: none; padding: 8px 12px; border: 1px solid #3182ce; border-radius: 6px;">
+    🔗 View in ActiveCampaign
+  </a>
+</div>
       </div>
     </div>
 
@@ -247,34 +252,65 @@
         }
       });
 
-     window.addEventListener('message', function(e) {
-        const data = e.data;
-        if (!data || !data.type) return;
+    window.addEventListener('message', function(e) {
+  const data = e.data;
+  if (!data || !data.type) return;
 
-        // Catch inbound ringing, outbound dialing, and connected calls
-        if (data.type === 'rc-call-ring-notify' || 
-            data.type === 'rc-active-call-notify' || 
-            data.type === 'rc-web-phone-call-start') {
-          
-          if (data.call) {
-            let customerNumber = "";
-            
-            // If the rep is calling out, the customer is the "To" number
-            if (data.call.direction === 'Outbound') {
-               customerNumber = data.call.to.phoneNumber || data.call.to; 
-            } 
-            // If the customer is calling in, the customer is the "From" number
-            else if (data.call.direction === 'Inbound') {
-               customerNumber = data.call.from.phoneNumber || data.call.from;
-            }
+  if (data.type === 'rc-call-ring-notify' || 
+      data.type === 'rc-active-call-notify' || 
+      data.type === 'rc-web-phone-call-start') {
+    
+    if (data.call) {
+      let customerNumber = "";
+      if (data.call.direction === 'Outbound') {
+         customerNumber = data.call.to.phoneNumber || data.call.to; 
+      } else if (data.call.direction === 'Inbound') {
+         customerNumber = data.call.from.phoneNumber || data.call.from;
+      }
 
-            // Clean up the number and pop it into the field
-            if (customerNumber) {
-              document.getElementById('phone').value = customerNumber;
-            }
-          }
-        }
-      });
+      if (customerNumber) {
+        document.getElementById('phone').value = customerNumber;
+        // 🚀 AUTO-LOOKUP AS SOON AS RINGCENTRAL POPULATES PHONE
+        autoLookupContact(customerNumber);
+      }
+    }
+  }
+});
+function autoLookupContact(phoneNum) {
+  const status = document.getElementById('status');
+  const acLink = document.getElementById('acViewLink');
+
+  // Hide previous link during search
+  acLink.style.display = 'none';
+  status.innerText = "🔍 Checking ActiveCampaign...";
+
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: "search", phone: phoneNum })
+  })
+  .then(res => res.json())
+  .then(data => {
+    status.innerText = "";
+    if (data.found) {
+      // Prefill fields
+      if (data.firstName) document.getElementById('firstName').value = data.firstName;
+      if (data.lastName) document.getElementById('lastName').value = data.lastName;
+      if (data.email) document.getElementById('email').value = data.email;
+
+      // Show View Link Button ("View Deal" or "View Contact")
+      acLink.href = data.url;
+      acLink.innerText = `🔗 View ${data.type} in ActiveCampaign`;
+      acLink.style.display = 'inline-block';
+    } else {
+      status.innerText = "ℹ️ New phone number (not in CRM yet).";
+      setTimeout(() => { status.innerText = ""; }, 3000);
+    }
+  })
+  .catch(err => {
+    status.innerText = "";
+    console.error("Lookup Error: ", err);
+  });
+}
 
       function submitLog() {
         const btn = document.getElementById('submitBtn');
