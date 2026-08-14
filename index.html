@@ -162,10 +162,9 @@
 
     <!-- 1. The RingCentral Embeddable Widget -->
     <div id="phone-container">
-      <!-- Make sure your clientId is still inside this URL! -->
-    <iframe id="rc-widget" allow="microphone" 
+      <iframe id="rc-widget" allow="microphone" 
         src="https://apps.ringcentral.com/integration/ringcentral-embeddable/latest/app.html?clientId=3WhRIqL8oGjeZ4YD3dGkCM&appServer=https://platform.ringcentral.com&redirectUri=https://apps.ringcentral.com/integration/ringcentral-embeddable/latest/redirect.html">
-</iframe>
+      </iframe>
     </div>
 
     <!-- 2. The Dashboard Right Side -->
@@ -186,17 +185,17 @@
           <label>✉️ Email Address:</label>
           <input type="email" id="email" placeholder="lead@example.com">
         </div>
+
         <div class="input-group">
-        <label>First Name:</label>
-        <input type="text" id="firstName" placeholder="Jane" autocomplete="off">
-      </div>
+          <label>First Name:</label>
+          <input type="text" id="firstName" placeholder="Jane" autocomplete="off">
+        </div>
 
-      <div class="input-group">
-        <label>Last Name:</label>
-        <input type="text" id="lastName" placeholder="Doe" autocomplete="off">
-      </div>
+        <div class="input-group">
+          <label>Last Name:</label>
+          <input type="text" id="lastName" placeholder="Doe" autocomplete="off">
+        </div>
 
-        <!-- NEW: Program Interest Dropdown -->
         <div class="input-group">
           <label>🎓 Program Interest:</label>
           <select id="program">
@@ -225,26 +224,27 @@
           <label>📝 Call Notes (Optional):</label>
           <textarea id="notes" rows="3" placeholder="Lead asked about evening classes..."></textarea>
         </div>
-<div class="input-group">
+
+        <div class="input-group">
           <label>🔒 Rep PIN:</label>
           <input type="password" id="pin" placeholder="Enter 4-digit PIN" autocomplete="off">
         </div>
+
         <button onclick="submitLog()" id="submitBtn">Log to ActiveCampaign</button>
         <div id="statusMessage"></div>
+
         <div style="margin-top: 15px; text-align: center;">
-  <a id="acViewLink" href="#" target="_blank" style="display: none; color: #3182ce; font-weight: bold; text-decoration: none; padding: 8px 12px; border: 1px solid #3182ce; border-radius: 6px;">
-    🔗 View in ActiveCampaign
-  </a>
-</div>
+          <a id="acViewLink" href="#" target="_blank" style="display: none; color: #3182ce; font-weight: bold; text-decoration: none; padding: 8px 12px; border: 1px solid #3182ce; border-radius: 6px;">
+            🔗 View in ActiveCampaign
+          </a>
+        </div>
       </div>
     </div>
 
     <!-- 3. The Javascript -->
-   <!-- 3. The Javascript -->
     <script>
       const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzBLnUCxcc26yaXUUmnim_pRP188z_emihi5XVcP0nxmek3zXWb6doZMl86OcdfzriQuA/exec";
 
-      // NEW: When the page loads, check if they have a saved PIN!
       document.addEventListener("DOMContentLoaded", function() {
         const savedPin = localStorage.getItem("heroRepPin");
         if (savedPin) {
@@ -252,65 +252,65 @@
         }
       });
 
-    window.addEventListener('message', function(e) {
-  const data = e.data;
-  if (!data || !data.type) return;
+      window.addEventListener('message', function(e) {
+        const data = e.data;
+        if (!data || !data.type) return;
 
-  if (data.type === 'rc-call-ring-notify' || 
-      data.type === 'rc-active-call-notify' || 
-      data.type === 'rc-web-phone-call-start') {
-    
-    if (data.call) {
-      let customerNumber = "";
-      if (data.call.direction === 'Outbound') {
-         customerNumber = data.call.to.phoneNumber || data.call.to; 
-      } else if (data.call.direction === 'Inbound') {
-         customerNumber = data.call.from.phoneNumber || data.call.from;
+        if (data.type === 'rc-call-ring-notify' || 
+            data.type === 'rc-active-call-notify' || 
+            data.type === 'rc-web-phone-call-start') {
+          
+          if (data.call) {
+            let customerNumber = "";
+            if (data.call.direction === 'Outbound') {
+               customerNumber = data.call.to.phoneNumber || data.call.to; 
+            } else if (data.call.direction === 'Inbound') {
+               customerNumber = data.call.from.phoneNumber || data.call.from;
+            }
+
+            if (customerNumber) {
+              document.getElementById('phone').value = customerNumber;
+              // 🚀 AUTO-LOOKUP TRIGGERED
+              autoLookupContact(customerNumber);
+            }
+          }
+        }
+      });
+
+      function autoLookupContact(phoneNum) {
+        const status = document.getElementById('statusMessage');
+        const acLink = document.getElementById('acViewLink');
+
+        acLink.style.display = 'none';
+        status.innerText = "🔍 Checking ActiveCampaign...";
+        status.style.color = "var(--primary-blue)";
+
+        fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: "search", phone: phoneNum })
+        })
+        .then(res => res.json())
+        .then(data => {
+          status.innerText = "";
+          if (data.found) {
+            if (data.firstName) document.getElementById('firstName').value = data.firstName;
+            if (data.lastName) document.getElementById('lastName').value = data.lastName;
+            if (data.email) document.getElementById('email').value = data.email;
+
+            acLink.href = data.url;
+            acLink.innerText = `🔗 View ${data.type} in ActiveCampaign`;
+            acLink.style.display = 'inline-block';
+          } else {
+            status.innerText = "ℹ️ New phone number (not in CRM yet).";
+            status.style.color = "#64748b";
+            setTimeout(() => { status.innerText = ""; }, 3000);
+          }
+        })
+        .catch(err => {
+          status.innerText = "";
+          console.error("Lookup Error: ", err);
+        });
       }
-
-      if (customerNumber) {
-        document.getElementById('phone').value = customerNumber;
-        // 🚀 AUTO-LOOKUP AS SOON AS RINGCENTRAL POPULATES PHONE
-        autoLookupContact(customerNumber);
-      }
-    }
-  }
-});
-function autoLookupContact(phoneNum) {
-  const status = document.getElementById('status');
-  const acLink = document.getElementById('acViewLink');
-
-  // Hide previous link during search
-  acLink.style.display = 'none';
-  status.innerText = "🔍 Checking ActiveCampaign...";
-
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: "search", phone: phoneNum })
-  })
-  .then(res => res.json())
-  .then(data => {
-    status.innerText = "";
-    if (data.found) {
-      // Prefill fields
-      if (data.firstName) document.getElementById('firstName').value = data.firstName;
-      if (data.lastName) document.getElementById('lastName').value = data.lastName;
-      if (data.email) document.getElementById('email').value = data.email;
-
-      // Show View Link Button ("View Deal" or "View Contact")
-      acLink.href = data.url;
-      acLink.innerText = `🔗 View ${data.type} in ActiveCampaign`;
-      acLink.style.display = 'inline-block';
-    } else {
-      status.innerText = "ℹ️ New phone number (not in CRM yet).";
-      setTimeout(() => { status.innerText = ""; }, 3000);
-    }
-  })
-  .catch(err => {
-    status.innerText = "";
-    console.error("Lookup Error: ", err);
-  });
-}
 
       function submitLog() {
         const btn = document.getElementById('submitBtn');
@@ -335,23 +335,22 @@ function autoLookupContact(phoneNum) {
             return;
         }
 
-        // NEW: Save the PIN to local storage so they don't have to type it again tomorrow
         localStorage.setItem("heroRepPin", pin);
 
         btn.innerText = "Logging...";
         btn.style.opacity = "0.7";
         status.innerText = "";
         
-            const formData = {
-        pin: pin,
-        firstName: firstName,
-        lastName: lastName,
-        phone: phone,
-        email: email,
-        program: program === "Select a program..." ? "" : program, 
-        disposition: disp,
-        notes: document.getElementById('notes').value
-      };
+        const formData = {
+          pin: pin,
+          firstName: firstName,
+          lastName: lastName,
+          phone: phone,
+          email: email,
+          program: program === "Select a program..." ? "" : program, 
+          disposition: disp,
+          notes: document.getElementById('notes').value
+        };
 
         fetch(GAS_WEB_APP_URL, {
           method: "POST",
@@ -359,7 +358,6 @@ function autoLookupContact(phoneNum) {
         })
         .then(response => response.text())
         .then(result => {
-          // If the backend rejects the PIN, warn them!
           if (result.includes("Access Denied")) {
              status.innerText = "❌ " + result;
              status.style.color = "#d93025";
@@ -371,13 +369,13 @@ function autoLookupContact(phoneNum) {
           status.innerText = "✅ " + result;
           status.style.color = "var(--brand-green)";
           
-          // Clear form after success (but leave the PIN alone!)
           document.getElementById('notes').value = ""; 
           document.getElementById('email').value = ""; 
           document.getElementById('firstName').value = ""; 
           document.getElementById('lastName').value = "";
           document.getElementById('disposition').selectedIndex = 0;
           document.getElementById('program').selectedIndex = 0; 
+          document.getElementById('acViewLink').style.display = 'none';
           btn.innerText = "Log to ActiveCampaign";
           btn.style.opacity = "1";
           
